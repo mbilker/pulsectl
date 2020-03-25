@@ -1,35 +1,9 @@
+use std::error::Error;
 use std::fmt;
 
 use pulse::error::{Code, PAErr};
 
-impl From<PAErr> for PulseCtlError {
-    fn from(error: PAErr) -> Self {
-        let code: Code = error.into();
-        PulseCtlError {
-            error: PulseCtlErrorType::PulseAudioError,
-            message: format!("PulseAudio returned error code {:?}", code),
-        }
-    }
-}
-
-impl fmt::Debug for PulseCtlError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut error_string = String::new();
-        match self.error {
-            PulseCtlErrorType::ConnectError => {
-                error_string.push_str("ConnectError");
-            }
-            PulseCtlErrorType::OperationError => {
-                error_string.push_str("OperationError");
-            }
-            PulseCtlErrorType::PulseAudioError => {
-                error_string.push_str("PulseAudioError");
-            }
-        }
-        write!(f, "[{}]: {}", error_string, self.message)
-    }
-}
-
+#[derive(Debug)]
 pub(crate) enum PulseCtlErrorType {
     ConnectError,
     OperationError,
@@ -40,6 +14,7 @@ pub(crate) enum PulseCtlErrorType {
 /// `PulseCtlErrorType::ConnectError` when there's an error establishing a connection
 /// `PulseCtlErrorType::OperationError` when the requested operation quis unexpecdatly or is cancelled
 /// `PulseCtlErrorType::PulseAudioError` when PulseAudio returns an error code in any circumstance
+#[derive(Debug)]
 pub struct PulseCtlError {
     error: PulseCtlErrorType,
     message: String,
@@ -53,3 +28,26 @@ impl PulseCtlError {
         }
     }
 }
+
+impl From<PAErr> for PulseCtlError {
+    fn from(error: PAErr) -> Self {
+        let code: Code = error.into();
+        PulseCtlError {
+            error: PulseCtlErrorType::PulseAudioError,
+            message: format!("PulseAudio returned error code {:?}", code),
+        }
+    }
+}
+
+impl fmt::Display for PulseCtlError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let error_str = match self.error {
+            PulseCtlErrorType::ConnectError => "ConnectError",
+            PulseCtlErrorType::OperationError => "OperationError",
+            PulseCtlErrorType::PulseAudioError => "PulseAudioError",
+        };
+        write!(f, "[{}]: {}", error_str, self.message)
+    }
+}
+
+impl Error for PulseCtlError {}
